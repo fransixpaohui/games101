@@ -1,0 +1,44 @@
+### 本次作业背景
+
+ **camera** 在一个视点**eye_pos** 上看一个3D空间中的三角形，这个三角形的坐标已知，我们需要将这个三角形变换为屏幕坐标。
+
+### 本次作业任务
+
+1. 填写一个旋转矩阵（**model transformation**）
+2. 填写一个投影矩阵（**projection transformation**）
+
+### 已经提供的框架
+
+#### **rasterizer.hpp** 文件
+
+**作用**：生成渲染器界面与绘制。
+
+**draw()**函数：生成目标屏幕坐标，在这个函数中，每个原图形坐标会乘以**model\*view\*projection**从而转变为屏幕坐标。
+
+**draw_line()**函数：生成两点之间的直线。
+
+#### main.cpp 文件
+
+**view transformation**：将视点坐标移动到原点所需要的变换
+
+```c++
+Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos){
+    Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
+    Eigen::Matrix4f translate;
+    translate <<
+        1, 0, 0, -eye_pos[0],
+        0, 1, 0, -eye_pos[1],
+        0, 0, 1, -eye_pos[2],
+        0, 0, 0, 1;
+    view = translate * view;
+    return view;
+}
+```
+**题意所给信息**
+
+```c++
+rst::rasterizer r(700, 700);	// 目标屏幕空间
+Eigen::Vector3f eye_pos = { 0, 0, 5 };	// 视点
+std::vector<Eigen::Vector3f> pos{ {2, 0, -2}, {0, 2, -2}, {-2, 0, -2} };	// 三角形三个顶点
+```
+
