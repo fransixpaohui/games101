@@ -6,6 +6,21 @@
 
 constexpr double MY_PI = 3.1415926;
 
+// model transformation 将物体摆正所需角度所需要的变换
+Eigen::Matrix4f get_model_matrix(float rotation_angle)
+{
+    Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+    //根据Rodrigue旋转公式得到旋转矩阵
+    model <<
+        cos((rotation_angle * MY_PI) / 180), -sin((rotation_angle * MY_PI) / 180), 0, 0,
+        sin((rotation_angle * MY_PI) / 180), cos((rotation_angle * MY_PI) / 180), 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1;
+
+    return model;
+}
+
+// view transformation 将视点移到原点所需要的变换
 Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 {
     Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
@@ -22,25 +37,10 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
     return view;
 }
 
-// 三维中绕 z 轴旋转的变换矩阵，参数为旋转角度
-Eigen::Matrix4f get_model_matrix(float rotation_angle)
-{
-    Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-    //根据Rodrigue旋转公式得到旋转矩阵
-    model <<
-        cos((rotation_angle * MY_PI) / 180), -sin((rotation_angle * MY_PI) / 180), 0, 0,
-        sin((rotation_angle * MY_PI) / 180), cos((rotation_angle * MY_PI) / 180), 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1;
-  
-    return model;
-}
-
-// 得到透视投影矩阵
+// projection transformation 将3D向视点角度投影到固定视平面的变换
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
     float zNear, float zFar)
 {
-
     Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
 
     Eigen::Matrix4f persp2ortho = Eigen::Matrix4f::Identity();
@@ -52,7 +52,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
         0, 0, zNear + zFar, -(zNear * zFar),
         0, 0, 1, 0;
 
-    //M ortho 第二步，正交投影
+    // 第二步，正交投影
     Eigen::Matrix4f ortho = Eigen::Matrix4f::Identity();
     Eigen::Matrix4f scale = Eigen::Matrix4f::Identity();
     Eigen::Matrix4f translation = Eigen::Matrix4f::Identity();
@@ -110,11 +110,14 @@ int main(int argc, const char** argv)
 
     int key = 0;
     int frame_count = 0;
+
     if (command_line) {
         r.clear(rst::Buffers::Color | rst::Buffers::Depth);
-
+        // 第一步，model transformation 将物体摆到需要的角度
         r.set_model(get_model_matrix(angle));
+        // 第二步，view transformation 将物体移至原点
         r.set_view(get_view_matrix(eye_pos));
+        // 第三步，projection transformation
         r.set_projection(get_projection_matrix(45, 1, 0.1, 50));
 
         r.draw(pos_id, ind_id, rst::Primitive::Triangle);
@@ -122,9 +125,10 @@ int main(int argc, const char** argv)
         image.convertTo(image, CV_8UC3, 1.0f);
 
         cv::imwrite(filename, image);
+
         return 0;
     }
-
+    //键盘输入不是ESC
     while (key != 27) {
         r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
@@ -148,5 +152,6 @@ int main(int argc, const char** argv)
             angle -= 10;
         }
     }
+
     return 0;
 }
